@@ -4,12 +4,20 @@ from tfx.components.trainer.fn_args_utils import FnArgs
 
 LABEL_KEY = 'label'
 TEXT_KEY = 'text'
+VOCAB_SIZE = 15000
+EMBEDDING_DIM = 128
+MAX_LEN = 200
+BATCH_SIZE = 32
+EPOCHS = 10
+
 
 def transformed_name(key):
     return key + '_xf'
 
+
 def gzip_reader_fn(filenames):
     return tf.data.TFRecordDataset(filenames, compression_type='GZIP')
+
 
 def input_fn(file_pattern, tf_transform_output, batch_size=32):
     transform_feature_spec = tf_transform_output.transformed_feature_spec().copy()
@@ -28,7 +36,8 @@ def input_fn(file_pattern, tf_transform_output, batch_size=32):
     dataset = dataset.map(split_label)
     return dataset
 
-def build_model(vocab_size=15000, embedding_dim=128, max_len=200):
+
+def build_model(vocab_size=VOCAB_SIZE, embedding_dim=EMBEDDING_DIM, max_len=MAX_LEN):
     inputs = tf.keras.layers.Input(shape=(1,), dtype=tf.string, name=transformed_name(TEXT_KEY))
 
     vectorize_layer = tf.keras.layers.TextVectorization(
@@ -62,11 +71,12 @@ def build_model(vocab_size=15000, embedding_dim=128, max_len=200):
 
     return model
 
+
 def run_fn(fn_args: FnArgs):
     tf_transform_output = tft.TFTransformOutput(fn_args.transform_graph_path)
 
-    train_dataset = input_fn(fn_args.train_files, tf_transform_output, batch_size=32)
-    eval_dataset = input_fn(fn_args.eval_files, tf_transform_output, batch_size=32)
+    train_dataset = input_fn(fn_args.train_files, tf_transform_output, batch_size=BATCH_SIZE)
+    eval_dataset = input_fn(fn_args.eval_files, tf_transform_output, batch_size=BATCH_SIZE)
 
     model = build_model()
 
@@ -76,7 +86,7 @@ def run_fn(fn_args: FnArgs):
     model.fit(
         train_dataset,
         validation_data=eval_dataset,
-        epochs=10,
+        epochs=EPOCHS,
         callbacks=[
             tf.keras.callbacks.EarlyStopping(
                 monitor='val_loss',

@@ -5,8 +5,10 @@ LABEL_KEY = 'label'
 TEXT_KEY = 'text'
 TITLE_KEY = 'title'
 
+
 def transformed_name(key):
     return key + '_xf'
+
 
 def preprocessing_fn(inputs):
     outputs = {}
